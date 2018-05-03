@@ -1,135 +1,163 @@
-## How to Run 
+                                              
+## __Case Study:  myRetail RESTful service__
 
-This application is packaged as a jar which has Tomcat 8 embedded. No Tomcat or JBoss installation is necessary. You run it using the ```java -jar``` command.
+myRetail is a rapidly growing company with HQ in Richmond, VA and over 200 stores across the east coast. myRetail wants to make its internal data available to any number of client devices, from myRetail.com to native mobile apps. 
+The goal for this exercise is to create an end-to-end Proof-of-Concept for a products API, which will aggregate product data from multiple sources and return it as JSON to the caller. 
+Your goal is to create a RESTful service that can retrieve product and price details by ID. The URL structure is up to you to define, but try to follow some sort of logical convention.
+Build an application that performs the following actions: 
+•	Responds to an HTTP GET request at /products/{id} and delivers product data as JSON (where {id} will be a number. 
+•	Example product IDs: 15117729, 16483589, 16696652, 16752456, 15643793) 
+•	Example response: {"id":13860428,"name":"The Big Lebowski (Blu-ray) (Widescreen)","current_price":{"value": 13.49,"currency_code":"USD"}}
+•	Performs an HTTP GET to retrieve the product name from an external API. (For this exercise the data will come from redsky.target.com, but let’s just pretend this is an internal resource hosted by myRetail)  
+•	Example: http://redsky.target.com/v2/pdp/tcin/13860428?excludes=taxonomy,price,promotion,bulk_ship,rating_and_review_reviews,rating_and_review_statistics,question_answer_statistics
+•	Reads pricing information from a NoSQL data store and combines it with the product id and name from the HTTP request into a single response.  
+•	BONUS: Accepts an HTTP PUT request at the same path (/products/{id}), containing a JSON request body similar to the GET response, and updates the product’s price in the data store.   
 
-* Clone this repository 
-* Make sure you are using JDK 1.8 and Maven 3.x
-* You can build the project and run the tests by running ```mvn clean package```
-* Once successfully built, you can run the service by one of these two methods:
-```
-        java -jar -Dspring.profiles.active=orders-test target/orders-0.0.1-SNAPSHOT.jar
-or
-        mvn spring-boot:run -Drun.arguments="spring.profiles.active=orders-test"
-```
-* Check the stdout to make sure no exceptions are thrown
+*********************************************************************************************************************************
+# __Solution:__
 
-Once the application runs you should see something like this
+## __MyRetail API Solution provides the ability to:__
 
-```
-2018-03-11 19:38:51.694  INFO 42281 --- [           main] s.b.c.e.t.TomcatEmbeddedServletContainer : Tomcat started on port(s): 8088 (http)
-2018-03-11 19:38:51.706  INFO 42281 --- [           main] com.avenuecode.orders.OrdersApplication  : Started OrdersApplication in 11.659 seconds (JVM running for 12.362)
-2018-03-11 19:38:51.706  INFO 42281 --- [           main] com.avenuecode.orders.OrdersApplication  : Running orders application.
-2018-03-11 19:39:28.005  INFO 42281 --- [nio-8088-exec-1] o.a.c.c.C.[Tomcat].[localhost].[/]       : Initializing Spring FrameworkServlet 'dispatcherServlet'
-2018-03-11 19:39:28.005  INFO 42281 --- [nio-8088-exec-1] o.s.web.servlet.DispatcherServlet        : FrameworkServlet 'dispatcherServlet': initialization started
-2018-03-11 19:39:28.042  INFO 42281 --- [nio-8088-exec-1] o.s.web.servlet.DispatcherServlet        : FrameworkServlet 'dispatcherServlet': initialization completed in 37 ms
-```
+<ol>
+  <li>Retrieve product and pricing information by Product Id.</li>
+  <li>Update the price information in the mongo database.</li>
+  <li>Secure API with basic authentication.</li>
+  <li>One rest end point is not secure. /products just to show the how implementation without secure can be implemented</li>	
+  <li>Implement Swagger2 for API documentation</li>
+</ol>
+All the end points are totally secure in this application. I have implemented basic security and method level security as well. Update resource can be accessed by admin/admin user only.
 
-## About the Service
+                                   Method               Request                   Credentials
+                                     GET              /products/{id}              [SECURE -- admin/admin]
+                                     PUT              /products/{id}              [SECURE -- admin/admin]
+					                 GET              /products                   [NOT SECURE]
 
-The service is just a simple Orders Application REST services. It uses an in-memory database (H2) to store the data. You can also do with a relational database like MySQL or PostgreSQL. If your database connection properties work, you can call some REST endpoints defined in ```com.avenuecode.orders.resource``` on **port 8088**. (see below)
- 
-Here is what this little application demonstrates: 
+###### __Technology Stack:__
 
-* Full integration with the latest **Spring** Framework: inversion of control, dependency injection, etc.
-* Packaging as a single jar with embedded container (tomcat 8): No need to install a container separately on the host just run using the ``java -jar`` command
-* Writing a RESTful service using annotation: supports only JSON response; 
-* Exception mapping from application exceptions to the right HTTP response with exception details in the body
-* *Spring Data* Integration with JPA/Hibernate with just a few lines of configuration and familiar annotations. 
-* Automatic CRUD functionality against the data source using Spring *Repository* pattern
-* Demonstrates MockMVC test framework with associated libraries
-* All APIs are "self-documented" by Swagger2 using annotations 
+1. Spring Boot : 
+2. Feign: Declarative REST Client: Feign creates a dynamic implementation of an interface decorated with JAX-RS or Spring MVC annotations.
+3. MongoDB:
+4. Maven:
+5. Mokito/Junit:
+6. Postman: for testing the secured services
 
-Here are some endpoints you can call:
+###### __Setup instructions:__
 
-## Orders Related Services
-### Retrieve a list of orders
+1. Java 1.8
+2. Eclipse
+3. Install Mongo DB
+4. Install Maven 
+5. Download project
+	a) Download as a ZIP file OR
+6. Import the project into eclipse –   File->import
 
-```
-http://localhost:8088/orders
+##### Run Mongo
 
-Response: HTTP 200
-```
+Run the Mongo daemon, in one of your terminal windows run "mongod". This should start the Mongo server.
+Run the Mongo shell, with the Mongo daemon running in one terminal, type "mongo" in another to run the Mongo shell
 
-### Retrieve a specific order resource
+###### __Test the project:__
 
-```
-http://localhost:8088/orders/{orderId}
+Test cases are present on the following directory. I have written some test cases for controller class and service class using mokito. I am using mokito for mockdata.
 
-Response: HTTP 200
-```
+C:\WORK_ENV\workspace\myRetail\src\test\java
 
-### Retrieve orders based on search=status:shipped
-This search condition will get the orders whose status has been shipped
+To run the test Go to project folder and trigger following command on the command prompt or you can also right click on the project click "Run As" > "Maven Test" (Make sure that your are running the mongodb before running the test cases or the application)
 
-```
-http://localhost:8088/orders?search=status:shipped
+mvn test.
 
-Response: HTTP 200
-```
+###### __To run the application:__
 
-### Retrieve orders based on search=discount>0
-This search condition will get the orders that have discount greater than 0 or that has discounts
+Run mongo DB from the command prompt.  And test  ---  http://localhost:27017/  (default port)
+Go to the project folder and trigger the command:
 
-```
-http://localhost:8088/orders?search=discount>0
+mvn spring-boot:run 
 
-Response: HTTP 200
-```
+###### __Check the http Request:__
 
-### Retrieve orders based on search=products>2
-This search condition will get the orders that have more than 2 products in it
+### Secure API
+The end point of this application is fully secure. There are 3 users in this application.
+1. admin/admin   --- Can update price information and get the product by prodctId. 
+2. normaluser/normaluser  --  get the product by prodctId.
+3. dbuser/dbuser  -- get the product by prodctId.
 
-```
-http://localhost:8088/orders?search=products>2
+###  Swagger2 documentation path
+http://localhost:8080/swagger-ui.html
 
-Response: HTTP 200
-```
-
-
-## Products Related Services
-### Retrieve a list of products
-
-```
-http://localhost:8088/products
-
-Response: HTTP 200
-```
-
-### Retrieve a specific product resource
+Some of the requests that could be peformed.
+GET: With valid product but no credentials (http://localhost:8080/products/13860428)
+Response:
 
 ```
-http://localhost:8088/products/{productId}
-
-Response: HTTP 200
-```
-
-### Retrieve orders based on search=price>30
-This search condition will get the products whose price is greater than 30
+Response Status Code: 401 Unauthorized
+Response Body:
+ Http Status 401 Bad Credentials. 
 
 ```
-http://localhost:8088/products?search=price>30
 
-Response: HTTP 200
-```
 
-### To disable information logging and have only error logging since we do not want to hit the production servers with information logs. 
-Please make the below changes on application.yml file
+GET: with valid product and admin credentials (http://localhost:8080/products/13860428)
 
 ```
-logging:
-  level:
-    ROOT: ERROR
+Response status: 200K
+Response Body:
+{
+	"productId": 13860428,
+	"name": "The Big Lebowski (Blu-ray) (Widescreen)",
+	"current_price": {
+		"value": 40.24,
+		"currency_code": "USD"
+	}
+}
+
 ```
 
-### To view Swagger 2 API docs
 
-Run the server and browse to localhost:8088/swagger-ui.html
+GET: Wrong product ID and valid credentials admin/admin (http://localhost:8080/products/13860428)
 
-### To view your H2 in-memory datbase
+```
+Response Status Code: 404 Not Found
+Response Body:
+{
+    "timestamp": 1525289857658,
+    "status": 404,
+    "error": "Not Found",
+    "exception": "com.myretail.exception.ResourceNotFoundException",
+    "message": "Resource not found. ",
+    "path": "/products/1386042674"
+}
+```
 
-The 'retail_order' profile runs on H2 in-memory database. To view and query the database you can browse to http://localhost:8088/h2-console (username is 'avenucode' with password as 'avenuecode'). Make sure you disable this in your production profiles. 
+
+PUT Request: With Valid product Id and admin/admin credentials  (http://localhost:8080/products/13860428)
+
+```
+Request Body:
+{
+	"productId": 13860428,
+	"name": "The Big Lebowski (Blu-ray) (Widescreen)",
+	"current_price": {
+		"value": 40.24,
+		"currency_code": "USD"
+	}
+}
+Response Status Code: 200 OK
+Response Body: 
+{
+    "value": 200,
+    "message": "Product price has been updated"
+}
+
+```
 
 
+PUT Request: With Valid product Id and normaluser/normaluser credentials  (http://localhost:8080/products/13860428)
+
+```
+Response Status Code: 401 Unauthorized
+Response Body:
+ Http Status 401 Bad Credentials. 
+```
 
 
 

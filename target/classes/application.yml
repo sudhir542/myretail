@@ -5,7 +5,7 @@ server:
 # Logging properties 
 logging:
   level:
-    ROOT: info
+    ROOT: debug
 
 # Mongo Db configuration
 spring: 
